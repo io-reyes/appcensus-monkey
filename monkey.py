@@ -196,6 +196,8 @@ if __name__ == '__main__':
 
         monkey(config, apk, outdir, print_to_file=True)
     else:
+        _pre_run_checks(args.mincharge)
+
         _db_run(config, args.dbcreds, args.apkroot, outdir)
 
 
