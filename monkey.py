@@ -7,6 +7,7 @@ import datetime
 import time
 import subprocess
 from glob import glob
+import dbops
 
 def parse_config(config_file):
     assert os.path.isfile(config_file), '%s is not a valid file or path to file' % config_file
@@ -29,8 +30,10 @@ def parse_config(config_file):
 def parse_args():
     parser = argparse.ArgumentParser(description='Automatic monkey test script')
     parser.add_argument('config', help='Path to sdk.config file')
-    parser.add_argument('apk', help='Path to APK file to test')
     parser.add_argument('outdir', help='Directory where results will be stored. A subdirectory outdir/<package>/<versioncode>/ will be made if necessary')
+    parser.add_argument('--dbcreds', '-D', help='Database credentials file, used to retrieve apps from DB')
+    parser.add_argument('--apkroot', help='Path to APK root directory, required if dbcreds is specified')
+    parser.add_argument('--apk', '-a', help='Path to APK file to test (overrides --dbcreds)')
     parser.add_argument('--device', '-d', help='Android device ID, if multiple devices are connected')
     parser.add_argument('--mincharge', '-c', type=int, default=5)
 
@@ -136,22 +139,63 @@ def _check_charge(mincharge, charge_to=90):
             charge = sdk.adb_battery_level()
         sdk.adb_screen_turn_on()
 
-if __name__ == '__main__':
-    args = parse_args()
-    config = args.config
-    dev = args.device
-    mincharge = args.mincharge
-    sdk.init(config, device=dev)
-    apk = args.apk
-    outdir = args.outdir
-
-    assert os.path.isfile(apk), '%s is not a valid APK path' % apk
-
+def _pre_run_checks(mincharge):
     # Reboot and wait until the device is ready before proceeding
     sdk.adb_reboot(wait=True)
 
     # Ensure a minimum charge level
-    _check_charge(mincharge)
+    _check_charge(args.mincharge)
 
-    # Start the monkey run
-    monkey(config, apk, outdir, print_to_file=True)
+def _db_init(dbcreds):
+    config = configparser.ConfigParser()
+    config.read(dbcreds)
+
+    assert 'Database' in config.sections(), 'Credentials file %s does not contain a Database section' % dbcreds
+    assert 'host' in config['Database'], 'Credentials file %s does not have a host value in the Database section' % dbcreds
+    assert 'database' in config['Database'], 'Credentials file %s does not have a database value in the Database section' % dbcreds
+    assert 'user' in config['Database'], 'Credentials file %s does not have a user value in the Database section' % dbcreds
+    assert 'password' in config['Database'], 'Credentials file %s does not have a password value in the Database section' % dbcreds
+
+    creds = config['Database']
+    dbops.init(creds['host'], creds['database'], creds['user'], creds['password'])
+
+def _db_run(config, dbcreds, apk_root, outdir):
+    assert dbcreds is not None and os.path.isfile(dbcreds), 'A valid database secrets file must be supplied'
+    assert apk_root is not None and os.path.isdir(apk_root), 'A valid APK root directory must be supplied'
+
+    # Get a package name and version code from the database
+    _db_init(dbcreds)
+    (package_name, version_code) = dbops.get_app_to_test()
+
+    # Get the APK
+    apk = os.path.join(apk_root, package_name, str(version_code), '%s-%d.apk' % (package_name, version_code))
+
+    if(os.path.isfile(apk)):
+        # Run the test, mark the database appropriately
+        dbops.update_app_run_status(package_name, 1)
+        monkey(config, apk, outdir, print_to_file=True)
+        dbops.update_app_run_status(package_name, 2)
+
+    else:
+        dbops.update_app_run_status(package_name, -1)
+        assert os.path.isfile(apk), '%s is not a valid APK path' % apk
+
+if __name__ == '__main__':
+    args = parse_args()
+    config = args.config
+    outdir = args.outdir
+
+    dev = args.device
+    sdk.init(config, device=dev)
+
+    if(args.apk is not None):
+        apk = args.apk
+        assert os.path.isfile(apk), '%s is not a valid APK path' % apk
+
+        _pre_run_checks(args.mincharge)
+
+        monkey(config, apk, outdir, print_to_file=True)
+    else:
+        _db_run(config, args.dbcreds, args.apkroot, outdir)
+
+
