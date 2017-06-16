@@ -5,6 +5,7 @@ import io
 import random
 import multiprocessing
 import sys
+import shutil
 
 import time
 from datetime import datetime,timedelta
@@ -251,7 +252,7 @@ def adb_get_dev_file(save_as):
     adb_shell('input keyevent 3')
     adb_call_timeout('pull', '/sdcard/%s.device' % serial, timeout_secs=10)
 
-    os.rename('%s.device' % serial, save_as)
+    shutil.move('%s.device' % serial, save_as)
 
 def adb_clear_logs():
     log('LOGS', 'Clearing dmesg and logcat')

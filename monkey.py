@@ -173,8 +173,13 @@ def _db_run(config, dbcreds, apk_root, outdir):
     if(os.path.isfile(apk)):
         # Run the test, mark the database appropriately
         dbops.update_app_run_status(package_name, 1)
-        monkey(config, apk, outdir, print_to_file=True)
-        dbops.update_app_run_status(package_name, 2)
+
+        try:
+            monkey(config, apk, outdir, print_to_file=True)
+            dbops.update_app_run_status(package_name, 2)
+        except Exception as e:
+            print(str(e))
+            dbops.update_app_run_status(package_name, -1)
 
     else:
         dbops.update_app_run_status(package_name, -1)
