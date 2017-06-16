@@ -233,6 +233,7 @@ def adb_start_lumen():
     assert adb_package_installed(lumen_pkg) > 0, 'Lumen not installed on device'
 
     adb_stop_lumen()
+    adb_shell('svc wifi enable')    # Ensure wi-fi is on before turning on Lumen
     adb_toggle_lumen(clear_db=True)
 
 def adb_stop_lumen():
