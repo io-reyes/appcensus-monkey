@@ -17,7 +17,7 @@ function logcheck() {
 
 function run() {
     APK_PATH=/var/coppa/apks/
-    MONKEY=~/Downloads/coppa-software/monkey-test/monkey.py
+    MONKEY=/var/coppa/appcensus-monkey/monkey.py
 
     # Package only, take the biggest version code
     if [ $# -eq 1 ]; then
@@ -40,7 +40,7 @@ function run() {
             CONFIG=sdk.config
 
             echo "python3 $MONKEY $CONFIG $APK ."
-            #python3 $MONKEY $CONFIG $APK .
+            python3 $MONKEY --apk $APK $CONFIG .
         else
             (>&2 echo "WARNING: $PACKAGE already analyzed, skipping")
         fi
@@ -48,7 +48,7 @@ function run() {
         # Note failed results
         if ! logcheck $PACKAGE/$VCODE/**/*.log; then
             (>&2 echo "WARNING: $PACKAGE-$VCODE run did not produce logs")
-            echo $PACKAGE >> nolog.error
+            echo "$PACKAGE" >> nolog.error
         fi
     else
         (>&2 echo "ERROR: APK for package $PACKAGE version $VCODE not found")

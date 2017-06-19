@@ -260,7 +260,7 @@ def adb_clear_logs():
     adb_shell('su root dmesg -c')
 
     # Workaround to logcat not clearing: just keep trying
-    for n in range(20):
+    for n in range(5):
         adb_call_timeout('logcat', '-c', timeout_secs=10)
 
 def adb_clear_screen():
@@ -281,7 +281,7 @@ def adb_show_logs():
     log('LOGS', '-----logcat end-----')
 
     log('LOGS', '-----dmesg start-----')
-    print(adb_shell('dmesg'))
+    print(adb_shell('dmesg', retry_limit=0))
     log('LOGS', '-----dmesg end-----')
 
 def adb_is_screen_on():
