@@ -268,7 +268,7 @@ def adb_clear_screen():
     adb_shell('input keyevent 3')
     time.sleep(2)
 
-    for n in range(20):
+    for n in range(10):
         adb_shell('input keyevent 66')
         time.sleep(1)
 
