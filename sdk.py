@@ -13,7 +13,6 @@ from datetime import datetime,timedelta
 adb = None
 aapt = None
 
-last_package = None
 device_serial = None
 
 lumen_pkg = 'edu.berkeley.icsi.haystack'
@@ -182,16 +181,115 @@ def adb_install(apk_file, grant_all_perms=True):
                 print(e.output.decode('UTF-8', 'backslashreplace'))
                 continue
 
-    global last_package
-    last_package = package
+dont_uninstall = set(['android', \
+    'com.android.apps.tag', \
+    'com.android.backupconfirm', \
+    'com.android.bluetooth', \
+    'com.android.bluetoothmidiservice', \
+    'com.android.bookmarkprovider', \
+    'com.android.calculator2', \
+    'com.android.calendar', \
+    'com.android.calllogbackup', \
+    'com.android.camera2', \
+    'com.android.captiveportallogin', \
+    'com.android.carrierconfig', \
+    'com.android.certinstaller', \
+    'com.android.contacts', \
+    'com.android.defcontainer', \
+    'com.android.deskclock', \
+    'com.android.dialer', \
+    'com.android.documentsui', \
+    'com.android.dreams.basic', \
+    'com.android.dreams.phototable', \
+    'com.android.email', \
+    'com.android.externalstorage', \
+    'com.android.gallery3d', \
+    'com.android.hotwordenrollment', \
+    'com.android.htmlviewer', \
+    'com.android.inputdevices', \
+    'com.android.inputmethod.latin', \
+    'com.android.keychain', \
+    'com.android.launcher3', \
+    'com.android.location.fused', \
+    'com.android.managedprovisioning', \
+    'com.android.messaging', \
+    'com.android.mms.service', \
+    'com.android.music', \
+    'com.android.musicfx', \
+    'com.android.nfc', \
+    'com.android.omadm.service', \
+    'com.android.onetimeinitializer', \
+    'com.android.pacprocessor', \
+    'com.android.phone', \
+    'com.android.printspooler', \
+    'com.android.providers.calendar', \
+    'com.android.providers.contacts', \
+    'com.android.providers.downloads', \
+    'com.android.providers.downloads.ui', \
+    'com.android.providers.media', \
+    'com.android.providers.settings', \
+    'com.android.providers.telephony', \
+    'com.android.providers.userdictionary', \
+    'com.android.proxyhandler', \
+    'com.android.quicksearchbox', \
+    'com.android.sdm.plugins.connmo', \
+    'com.android.sdm.plugins.dcmo', \
+    'com.android.sdm.plugins.diagmon', \
+    'com.android.sdm.plugins.sprintdm', \
+    'com.android.server.telecom', \
+    'com.android.settings', \
+    'com.android.sharedstoragebackup', \
+    'com.android.shell', \
+    'com.android.smspush', \
+    'com.android.statementservice', \
+    'com.android.systemui', \
+    'com.android.vending', \
+    'com.android.vpndialogs', \
+    'com.android.wallpaper.livepicker', \
+    'com.android.wallpapercropper', \
+    'com.android.webview', \
+    'com.google.android.backuptransport', \
+    'com.google.android.feedback', \
+    'com.google.android.gms', \
+    'com.google.android.gsf', \
+    'com.google.android.gsf.login', \
+    'com.google.android.instantapps.supervisor', \
+    'com.google.android.launcher.layouts.bullhead', \
+    'com.google.android.onetimeinitializer', \
+    'com.google.android.packageinstaller', \
+    'com.google.android.partnersetup', \
+    'com.google.android.play.games', \
+    'com.google.android.setupwizard', \
+    'com.google.android.syncadapters.calendar', \
+    'com.google.android.syncadapters.contacts', \
+    'com.google.android.tts', \
+    'com.lexa.fakegps', \
+    'com.lge.HiddenMenu', \
+    'com.lge.lifetimer', \
+    'com.qualcomm.atfwd', \
+    'com.qualcomm.qcrilmsgtunnel', \
+    'com.qualcomm.qti.rcsbootstraputil', \
+    'com.qualcomm.qti.rcsimsbootstraputil', \
+    'com.qualcomm.timeservice', \
+    'com.quicinc.cne.CNEService', \
+    'com.svox.pico', \
+    'com.verizon.omadm', \
+    'edu.berkeley.icsi.devfilegen', \
+    'edu.berkeley.icsi.haystack', \
+    'jp.co.omronsoft.openwnn', \
+    'org.chromium.webview_shell'])
 
-def adb_uninstall_last():
-    global last_package
-    assert last_package is not None, 'Last installed package is not known'
+def adb_uninstall_all():
+    global dont_uninstall
 
-    log('UNINSTALL', 'Uninstalling %s' % last_package)
-    adb_call_timeout('uninstall', last_package)
-    last_package = None
+    (success, packages) = adb_shell('pm list packages')
+    if(success):
+        installed = set([x.replace('package:', '') for x in packages.split('\n') if x is not None and len(x) > 0])
+        to_uninstall = installed - dont_uninstall
+
+        for package in to_uninstall:
+            log('UNINSTALL', 'Uninstalling %s' % package)
+            adb_call_timeout('uninstall', package)
 
 def adb_start_app(package):
     # Always start from the home screen
@@ -319,12 +417,8 @@ def adb_lumen_check():
         log('LUMEN', 'Lumen VPN tunnel not active, turning on now')
         adb_start_lumen()
 
-def adb_monkey(package = None, seed=None, delay_ms=1000, event_count=100, pct_trackball=0, pct_nav=0, pct_majornav=0, pct_syskeys=0, pct_flip=0, pct_anyevent=0):
+def adb_monkey(package, seed=None, delay_ms=1000, event_count=100, pct_trackball=0, pct_nav=0, pct_majornav=0, pct_syskeys=0, pct_flip=0, pct_anyevent=0):
     seed = seed if seed is not None else random.randrange(999999999999)
-
-    global last_package
-    assert package is not None or last_package is not None, 'No package specified for monkey run'
-    package = package if package is not None else last_package
 
     log('MONKEY', 'Seed=%d' % seed)
     log('MONKEY', 'DelayMS=%d' % delay_ms)

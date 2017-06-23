@@ -105,7 +105,7 @@ def monkey(config, apk, outdir, print_to_file=True):
             sdk.adb_screenshot(screen_file)
 
         # Uninstall the app and wait for logs to be flushed
-        sdk.adb_uninstall_last()
+        sdk.adb_uninstall_all()
         time.sleep(5)
 
         # Toggle Lumen a couple times to flush its logs
