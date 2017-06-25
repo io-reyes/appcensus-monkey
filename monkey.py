@@ -146,6 +146,9 @@ def _pre_run_checks(mincharge):
     # Ensure a minimum charge level
     _check_charge(args.mincharge)
 
+    # Clear out all non-standard apps
+    sdk.adb_uninstall_all()
+
 def _db_init(dbcreds):
     config = configparser.ConfigParser()
     config.read(dbcreds)
