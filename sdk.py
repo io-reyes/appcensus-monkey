@@ -355,7 +355,8 @@ def adb_get_dev_file(save_as):
 
 def adb_clear_logs():
     log('LOGS', 'Clearing dmesg and logcat')
-    adb_shell('su root dmesg -c')
+    adb_shell('su 0 dmesg -c')
+    adb_shell('su 0 rm /data/data/com.android.launcher3/__ucb_fs_log__')
 
     # Workaround to logcat not clearing: just keep trying
     for n in range(5):
@@ -379,7 +380,7 @@ def adb_show_logs():
     log('LOGS', '-----logcat end-----')
 
     log('LOGS', '-----dmesg start-----')
-    print(adb_shell('dmesg', retry_limit=0))
+    print(adb_shell('su 0 dmesg', retry_limit=0))
     log('LOGS', '-----dmesg end-----')
 
 def adb_is_screen_on():

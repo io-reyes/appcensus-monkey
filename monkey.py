@@ -35,7 +35,8 @@ def parse_args():
     parser.add_argument('--apkroot', help='Path to APK root directory, required if dbcreds is specified')
     parser.add_argument('--apk', '-a', help='Path to APK file to test (overrides --dbcreds)')
     parser.add_argument('--device', '-d', help='Android device ID, if multiple devices are connected')
-    parser.add_argument('--mincharge', '-c', type=int, default=5)
+    parser.add_argument('--mincharge', '-c', type=int, default=5, help='Required minimum charge to proceed, default 5')
+    parser.add_argument('--test', action='store_true', help='Perform the debug test function instead of actually doing a monkey run')
 
     return parser.parse_args()
 
@@ -188,6 +189,11 @@ def _db_run(config, dbcreds, apk_root, outdir):
         dbops.update_app_run_status(package_name, -1)
         assert os.path.isfile(apk), '%s is not a valid APK path' % apk
 
+def _debug_test():
+    # Test SDK calls
+    #sdk.adb_clear_logs()
+    sdk.adb_show_logs()
+
 if __name__ == '__main__':
     args = parse_args()
     config = args.config
@@ -196,16 +202,19 @@ if __name__ == '__main__':
     dev = args.device
     sdk.init(config, device=dev)
 
-    if(args.apk is not None):
-        apk = args.apk
-        assert os.path.isfile(apk), '%s is not a valid APK path' % apk
-
-        _pre_run_checks(args.mincharge)
-
-        monkey(config, apk, outdir, print_to_file=True)
+    if(args.test):
+        _debug_test()
     else:
-        _pre_run_checks(args.mincharge)
+        if(args.apk is not None):
+            apk = args.apk
+            assert os.path.isfile(apk), '%s is not a valid APK path' % apk
 
-        _db_run(config, args.dbcreds, args.apkroot, outdir)
+            _pre_run_checks(args.mincharge)
+
+            monkey(config, apk, outdir, print_to_file=True)
+        else:
+            _pre_run_checks(args.mincharge)
+
+            _db_run(config, args.dbcreds, args.apkroot, outdir)
 
 
