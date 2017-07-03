@@ -7,7 +7,7 @@ import datetime
 import time
 import subprocess
 from glob import glob
-import dbops
+from dbops import dbops
 
 def parse_config(config_file):
     assert os.path.isfile(config_file), '%s is not a valid file or path to file' % config_file
