@@ -35,15 +35,11 @@ function run() {
     fi
 
     if [ -d $APK_PATH/$PACKAGE/$VCODE ]; then
-        if [ ! -d $PACKAGE ]; then
-            APK=$APK_PATH/$PACKAGE/$VCODE/$PACKAGE-$VCODE.apk
-            CONFIG=sdk.config
+        APK=$APK_PATH/$PACKAGE/$VCODE/$PACKAGE-$VCODE.apk
+        CONFIG=special.config
 
-            echo "python3 $MONKEY $CONFIG $APK ."
-            python3 $MONKEY --apk $APK $CONFIG .
-        else
-            (>&2 echo "WARNING: $PACKAGE already analyzed, skipping")
-        fi
+        echo "python3 $MONKEY $CONFIG $APK ."
+        python3 $MONKEY --apk $APK $CONFIG .
 
         # Note failed results
         if ! logcheck $PACKAGE/$VCODE/**/*.log; then
