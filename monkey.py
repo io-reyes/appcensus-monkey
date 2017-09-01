@@ -34,13 +34,14 @@ def parse_args():
     parser.add_argument('--dbcreds', '-D', help='Database credentials file, used to retrieve apps from DB')
     parser.add_argument('--apkroot', help='Path to APK root directory, required if dbcreds is specified')
     parser.add_argument('--apk', '-a', help='Path to APK file to test (overrides --dbcreds)')
+    parser.add_argument('--skip-install', '-s', action='store_true', help='Skips the installation step. Use this if the app is already installed on the device (i.e., for paid apps).')
     parser.add_argument('--device', '-d', help='Android device ID, if multiple devices are connected')
     parser.add_argument('--mincharge', '-c', type=int, default=5, help='Required minimum charge to proceed, default 5')
     parser.add_argument('--test', action='store_true', help='Perform the debug test function instead of actually doing a monkey run')
 
     return parser.parse_args()
 
-def monkey(config, apk, outdir, print_to_file=True):
+def monkey(config, apk, outdir, print_to_file=True, skip_install=False):
     (time_limit_mins, initial_screen_secs, reboot_after_run) = parse_config(config)
 
     # Create the output directory outdir/<package>/<versioncode>/test-<utc YYYYmmddHHMMSS>/
@@ -73,7 +74,8 @@ def monkey(config, apk, outdir, print_to_file=True):
     sdk.adb_get_dev_file(os.path.join(data_dir, '%s-%s-test-%s.device' % (package, version_code, test_time)))
 
     # Install the app
-    sdk.adb_install(apk)
+    if not skip_install:
+        sdk.adb_install(apk)
     assert sdk.adb_package_installed(package), '%s was not installed successfully' % package
 
     # Clear the screen
@@ -140,7 +142,7 @@ def _check_charge(mincharge, charge_to=90):
             charge = sdk.adb_battery_level()
         sdk.adb_screen_turn_on()
 
-def _pre_run_checks(mincharge):
+def _pre_run_checks(mincharge, uninstall_all=True):
     # Reboot and wait until the device is ready before proceeding
     sdk.adb_reboot(wait=True)
 
@@ -148,7 +150,8 @@ def _pre_run_checks(mincharge):
     _check_charge(args.mincharge)
 
     # Clear out all non-standard apps
-    sdk.adb_uninstall_all()
+    if(uninstall_all):
+        sdk.adb_uninstall_all()
 
 def _db_init(dbcreds):
     config = configparser.ConfigParser()
@@ -208,10 +211,11 @@ if __name__ == '__main__':
         if(args.apk is not None):
             apk = args.apk
             assert os.path.isfile(apk), '%s is not a valid APK path' % apk
+            skip_install = args.skip_install
 
-            _pre_run_checks(args.mincharge)
+            _pre_run_checks(args.mincharge, uninstall_all=not skip_install)
 
-            monkey(config, apk, outdir, print_to_file=True)
+            monkey(config, apk, outdir, print_to_file=True, skip_install=skip_install)
         else:
             _pre_run_checks(args.mincharge)
 

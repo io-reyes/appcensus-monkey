@@ -357,6 +357,7 @@ def adb_clear_logs():
     log('LOGS', 'Clearing dmesg and logcat')
     adb_shell('su 0 dmesg -c')
     adb_shell('su 0 rm /data/data/com.android.launcher3/__ucb_fs_log__')
+    adb_shell('su 0 rm /sdcard/lumen_*.log')
 
     # Workaround to logcat not clearing: just keep trying
     for n in range(5):
