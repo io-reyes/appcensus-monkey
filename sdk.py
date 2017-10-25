@@ -127,7 +127,7 @@ def adb_shell(*args, timeout_secs=10, retry_limit=5):
 def adb_shutdown():
     adb_shell('reboot -p')
 
-def adb_wait_boot(timeout_secs=90):
+def adb_wait_boot(timeout_secs=180):
     end_time = datetime.now() + timedelta(seconds=timeout_secs)
 
     log('WAITBOOT', 'Checking if device is booted')
