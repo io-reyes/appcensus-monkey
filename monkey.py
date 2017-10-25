@@ -108,7 +108,7 @@ def monkey(config, apk, outdir, print_to_file=True, skip_install=False):
             sdk.adb_screenshot(screen_file)
 
         # Uninstall the app and wait for logs to be flushed
-        if not skip_uninstall:
+        if not skip_install:
             sdk.adb_uninstall_all()
             time.sleep(5)
 
