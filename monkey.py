@@ -42,7 +42,7 @@ def parse_args():
 
     return parser.parse_args()
 
-def monkey(config, apk, outdir, print_to_file=True, skip_install=False, compress_pngs=True):
+def monkey(config, apk, outdir, print_to_file=True, skip_install=False, compress_screens=True):
     (time_limit_mins, initial_screen_secs, reboot_after_run) = parse_config(config)
 
     # Create the output directory outdir/<package>/<versioncode>/test-<utc YYYYmmddHHMMSS>/
@@ -120,8 +120,8 @@ def monkey(config, apk, outdir, print_to_file=True, skip_install=False, compress
         sdk.adb_stop_lumen()
 
         # Compress screenshots
-        if(compress_pngs):
-            _compress_pngs(data_dir, '%s-%s-test-%s-screens.tar.bz2' (package, version_code, test_time))
+        if(compress_screens):
+            _compress_pngs(data_dir, '%s-%s-test-%s-screens.tar.bz2' % (package, version_code, test_time))
 
         sdk.log('SUCCESS', package)
 
@@ -144,11 +144,12 @@ def _compress_pngs(png_dir, outfile, delete_pngs=True):
     if len(png_files) > 0:
         tar = tarfile.open(os.path.join(png_dir, outfile), 'w:bz2')
         for png in png_files:
-            tar.add(png)
+            tar.add(png, arcname=os.path.basename(png))
         tar.close()
 
     if(delete_pngs):
-        os.remove(png)
+        for png in png_files:
+            os.remove(png)
 
 def _check_charge(mincharge, charge_to=90):
     # Let the device charge up to a certain level once it drops below the minimum charge level
@@ -214,7 +215,8 @@ def _db_run(config, dbcreds, apk_root, outdir):
 def _debug_test():
     # Test SDK calls
     #sdk.adb_clear_logs()
-    sdk.adb_show_logs()
+    #sdk.adb_show_logs()
+    _compress_pngs('/home/ioreyes/coppa/mounts/run-data/com.aetnent.history.android.kids.PortaPilots/47245/test-20171026194243/', 'com.aetnent.history.android.kids.PortaPilots-47245-test-20171026194243-screens.tar.bz2')
 
 if __name__ == '__main__':
     args = parse_args()
