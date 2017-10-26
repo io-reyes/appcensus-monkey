@@ -121,7 +121,7 @@ def monkey(config, apk, outdir, print_to_file=True, skip_install=False, compress
 
         # Compress screenshots
         if(compress_pngs):
-            _compress_png(data_dir, '%s-%s-test-%s-screens.tar.bz2' (package, version_code, test_time))
+            _compress_pngs(data_dir, '%s-%s-test-%s-screens.tar.bz2' (package, version_code, test_time))
 
         sdk.log('SUCCESS', package)
 
