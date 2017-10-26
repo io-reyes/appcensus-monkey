@@ -6,6 +6,7 @@ import sys
 import datetime
 import time
 import subprocess
+import tarfile
 from glob import glob
 from dbops import dbops
 
@@ -41,7 +42,7 @@ def parse_args():
 
     return parser.parse_args()
 
-def monkey(config, apk, outdir, print_to_file=True, skip_install=False):
+def monkey(config, apk, outdir, print_to_file=True, skip_install=False, compress_pngs=True):
     (time_limit_mins, initial_screen_secs, reboot_after_run) = parse_config(config)
 
     # Create the output directory outdir/<package>/<versioncode>/test-<utc YYYYmmddHHMMSS>/
@@ -118,6 +119,10 @@ def monkey(config, apk, outdir, print_to_file=True, skip_install=False):
         sdk.adb_toggle_lumen()
         sdk.adb_stop_lumen()
 
+        # Compress screenshots
+        if(compress_pngs):
+            _compress_png(data_dir, '%s-%s-test-%s-screens.tar.bz2' (package, version_code, test_time))
+
         sdk.log('SUCCESS', package)
 
     except subprocess.CalledProcessError as e:
@@ -131,6 +136,19 @@ def monkey(config, apk, outdir, print_to_file=True, skip_install=False):
         if f is not None:
             sys.stdout = orig_sysout
             f.close()
+
+def _compress_pngs(png_dir, outfile, delete_pngs=True):
+    # Find all PNGs in the directory and compress them as <png_dir>/<outfile>.tar.bz2
+    png_files = [os.path.join(png_dir, x) for x in os.listdir(png_dir) if x.endswith('.png')]
+
+    if len(png_files) > 0:
+        tar = tarfile.open(os.path.join(png_dir, outfile), 'w:bz2')
+        for png in png_files:
+            tar.add(png)
+        tar.close()
+
+    if(delete_pngs):
+        os.remove(png)
 
 def _check_charge(mincharge, charge_to=90):
     # Let the device charge up to a certain level once it drops below the minimum charge level
