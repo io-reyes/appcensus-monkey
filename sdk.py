@@ -127,7 +127,7 @@ def adb_shell(*args, timeout_secs=10, retry_limit=5):
 def adb_shutdown():
     adb_shell('reboot -p')
 
-def adb_wait_boot(timeout_secs=180):
+def adb_wait_boot(timeout_secs=240):
     end_time = datetime.now() + timedelta(seconds=timeout_secs)
 
     log('WAITBOOT', 'Checking if device is booted')
@@ -383,6 +383,10 @@ def adb_show_logs():
     log('LOGS', '-----dmesg start-----')
     print(adb_shell('su 0 dmesg', retry_limit=0))
     log('LOGS', '-----dmesg end-----')
+
+def adb_is_wifi_connected():
+    (success, result) = adb_shell("dumpsys wifi | grep 'mNetworkInfo' | cut -d ',' -f2 | cut -d '/' -f2")
+    return success and result.strip() == 'CONNECTED'
 
 def adb_is_screen_on():
     (success, result) = adb_shell("dumpsys power | grep 'Display Power' | cut -d'=' -f2")

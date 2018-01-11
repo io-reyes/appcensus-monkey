@@ -173,6 +173,10 @@ def _pre_run_checks(mincharge, uninstall_all=True):
     if(uninstall_all):
         sdk.adb_uninstall_all()
 
+    # Wait a bit, make sure there's a wi-fi connection, quit if no connection is available
+    time.sleep(10)
+    assert sdk.adb_is_wifi_connected(), 'Wi-fi not available'
+
 def _db_init(dbcreds):
     config = configparser.ConfigParser()
     config.read(dbcreds)
