@@ -384,7 +384,11 @@ def adb_show_logs():
     print(adb_shell('su 0 dmesg', retry_limit=0))
     log('LOGS', '-----dmesg end-----')
 
-def adb_is_wifi_connected():
+def adb_is_wifi_connected(enable_wifi=True):
+    if(enable_wifi):
+        adb_shell('svc wifi enable')    # Ensure wi-fi is on before checking
+        time.sleep(20)
+
     (success, result) = adb_shell("dumpsys wifi | grep 'mNetworkInfo' | cut -d ',' -f2 | cut -d '/' -f2")
     return success and result.strip() == 'CONNECTED'
 
