@@ -151,15 +151,22 @@ def _compress_pngs(png_dir, outfile, delete_pngs=True):
         for png in png_files:
             os.remove(png)
 
-def _check_charge(mincharge, charge_to=90):
-    # Let the device charge up to a certain level once it drops below the minimum charge level
+def _check_charge(mincharge, charge_to=90, stall_limit=10):
+    # Let the device charge up to a certain level once it drops below the minimum charge level, but make sure it doesn't stall
     charge = sdk.adb_battery_level()
     if(charge < mincharge):
         sdk.adb_screen_turn_off()
+        stall_counter = 0
         while(charge < charge_to):
             print('Battery charge at %d, waiting until at least %d' % (charge, charge_to))
             time.sleep(10 * 60)
+
+            last_charge = charge
             charge = sdk.adb_battery_level()
+
+            stall_counter = stall_counter + 1 if last_charge == charge else 0
+            assert stall_counter <= stall_limit, "Charging stalled out at %d" % charge
+
         sdk.adb_screen_turn_on()
 
 def _pre_run_checks(mincharge, uninstall_all=True):
